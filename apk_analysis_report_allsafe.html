@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Analysis Report - allsafe.apk</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --primary-color: #2563eb;
+            --secrets-color: #dc2626; /* Red */
+            --private-keys-color: #facc15; /* Yellow */
+            --urls-color: #16a34a; /* Green */
+            --hardcoded-creds-color: #3b82f6; /* Blue */
+            --deeplinks-color: #7e22ce; /* Purple */
+            --exported-components-color: #ea580c; /* Orange */
+            --xml-creds-color: #d946ef; /* Fuchsia */
+            --firebase-color: #22d3ee; /* Cyan */
+            --ip-addresses-color: #6b7280; /* Gray */
+            --google-api-color: #db2777; /* Pink */
+        }
+        
+        .dark-mode {
+            --bg-color: #222222;
+            --text-color: #e0e0e0;
+            --card-bg: #333;
+            --border-color: #444;
+            --primary-color: #93c5fd;
+            --secrets-color: #f87171;
+            --private-keys-color: #fde047;
+            --urls-color: #22c55e;
+            --hardcoded-creds-color: #60a5fa;
+            --deeplinks-color: #c084fc;
+            --exported-components-color: #fb923c;
+            --xml-creds-color: #e879f9;
+            --firebase-color: #22d3ee;
+            --ip-addresses-color: #9ca3af;
+            --google-api-color: #f472b6;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+        
+        .mode-toggle {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .summary-card:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .summary-card.secrets {
+            border-left: 4px solid var(--secrets-color);
+        }
+        
+        .summary-card.secrets .count {
+            color: var(--secrets-color);
+        }
+        
+        .summary-card.private-keys {
+            border-left: 4px solid var(--private-keys-color);
+        }
+        
+        .summary-card.private-keys .count {
+            color: var(--private-keys-color);
+        }
+        
+        .summary-card.urls {
+            border-left: 4px solid var(--urls-color);
+        }
+        
+        .summary-card.urls .count {
+            color: var(--urls-color);
+        }
+        
+        .summary-card.hardcoded-creds {
+            border-left: 4px solid var(--hardcoded-creds-color);
+        }
+        
+        .summary-card.hardcoded-creds .count {
+            color: var(--hardcoded-creds-color);
+        }
+        
+        .summary-card.deeplinks {
+            border-left: 4px solid var(--deeplinks-color);
+        }
+        
+        .summary-card.deeplinks .count {
+            color: var(--deeplinks-color);
+        }
+        
+        .summary-card.exported-components {
+            border-left: 4px solid var(--exported-components-color);
+        }
+        
+        .summary-card.exported-components .count {
+            color: var(--exported-components-color);
+        }
+        
+        .summary-card.xml-creds {
+            border-left: 4px solid var(--xml-creds-color);
+        }
+        
+        .summary-card.xml-creds .count {
+            color: var(--xml-creds-color);
+        }
+        
+        .summary-card.firebase {
+            border-left: 4px solid var(--firebase-color);
+        }
+        
+        .summary-card.firebase .count {
+            color: var(--firebase-color);
+        }
+        
+        .summary-card.ip-addresses {
+            border-left: 4px solid var(--ip-addresses-color);
+        }
+        
+        .summary-card.ip-addresses .count {
+            color: var(--ip-addresses-color);
+        }
+        
+        .summary-card.google-api {
+            border-left: 4px solid var(--google-api-color);
+        }
+        
+        .summary-card.google-api .count {
+            color: var(--google-api-color);
+        }
+        
+        .count {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .findings-section {
+            margin-bottom: 40px;
+        }
+        
+        .finding-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .finding-card.secrets {
+            border-left-color: var(--secrets-color);
+        }
+        
+        .finding-card.secrets .finding-content {
+            color: var(--secrets-color);
+        }
+        
+        .finding-card.private-keys {
+            border-left-color: var(--private-keys-color);
+        }
+        
+        .finding-card.private-keys .finding-content {
+            color: var(--private-keys-color);
+        }
+        
+        .finding-card.urls {
+            border-left-color: var(--urls-color);
+        }
+        
+        .finding-card.urls .finding-content {
+            color: var(--urls-color);
+        }
+        
+        .finding-card.hardcoded-creds {
+            border-left-color: var(--hardcoded-creds-color);
+        }
+        
+        .finding-card.hardcoded-creds .finding-content {
+            color: var(--hardcoded-creds-color);
+        }
+        
+        .finding-card.deeplinks {
+            border-left-color: var(--deeplinks-color);
+        }
+        
+        .finding-card.deeplinks .finding-content {
+            color: var(--deeplinks-color);
+        }
+        
+        .finding-card.exported-components {
+            border-left-color: var(--exported-components-color);
+        }
+        
+        .finding-card.exported-components .finding-content {
+            color: var(--exported-components-color);
+        }
+        
+        .finding-card.xml-creds {
+            border-left-color: var(--xml-creds-color);
+        }
+        
+        .finding-card.xml-creds .finding-content {
+            color: var(--xml-creds-color);
+        }
+        
+        .finding-card.firebase {
+            border-left-color: var(--firebase-color);
+        }
+        
+        .finding-card.firebase .finding-content {
+            color: var(--firebase-color);
+        }
+        
+        .finding-card.ip-addresses {
+            border-left-color: var(--ip-addresses-color);
+        }
+        
+        .finding-card.ip-addresses .finding-content {
+            color: var(--ip-addresses-color);
+        }
+        
+        .finding-card.google-api {
+            border-left-color: var(--google-api-color);
+        }
+        
+        .finding-card.google-api .finding-content {
+            color: var(--google-api-color);
+        }
+        
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .finding-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .finding-content {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .dark-mode .finding-content {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .file-path {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .no-findings {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>APK Security Analysis Report</h1>
+                <p>Analyzed: allsafe.apk at 2025-06-18 14:00:15</p>
+            </div>
+            <button class="mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+        </header>
+        
+        <section class="summary">
+            <a href="#secrets" style="text-decoration: none;"><div class="summary-card secrets">
+                <h3>Secrets</h3>
+                <div class="count">19</div>
+            </div></a>
+            <a href="#private-keys" style="text-decoration: none;"><div class="summary-card private-keys">
+                <h3>Private Keys</h3>
+                <div class="count">0</div>
+            </div></a>
+            <a href="#urls" style="text-decoration: none;"><div class="summary-card urls">
+                <h3>URLs</h3>
+                <div class="count">27</div>
+            </div></a>
+            <a href="#hardcoded-creds" style="text-decoration: none;"><div class="summary-card hardcoded-creds">
+                <h3>Hardcoded Creds</h3>
+                <div class="count">0</div>
+            </div></a>
+            <a href="#deeplinks" style="text-decoration: none;"><div class="summary-card deeplinks">
+                <h3>Deeplinks</h3>
+                <div class="count">1</div>
+            </div></a>
+            <a href="#exported_components" style="text-decoration: none;"><div class="summary-card exported-components">
+                <h3>Exported Components</h3>
+                <div class="count">5</div>
+            </div></a>
+            <a href="#xml_creds" style="text-decoration: none;"><div class="summary-card xml-creds">
+                <h3>XML Credentials</h3>
+                <div class="count">2</div>
+            </div></a>
+            <a href="#firebase" style="text-decoration: none;"><div class="summary-card firebase">
+                <h3>Firebase URLs</h3>
+                <div class="count">2</div>
+            </div></a>
+            <a href="#ip_addresses" style="text-decoration: none;"><div class="summary-card ip-addresses">
+                <h3>IP Addresses</h3>
+                <div class="count">0</div>
+            </div></a>
+            <a href="#google_api" style="text-decoration: none;"><div class="summary-card google-api">
+                <h3>Google API Keys</h3>
+                <div class="count">1</div>
+            </div></a>
+        </section>
+    
+        <section class="findings-section" id="deeplinks">
+            <h2>Deeplinks</h2>
+            <p>Found 1 instances</p>
+        
+            <div class="finding-card deeplinks">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">allsafe://infosecadventures/congrats</div>
+                <div class="file-path">File: Activity: infosecadventures.allsafe.challenges.DeepLinkTask</div>
+            </div>
+            </section>
+        <section class="findings-section" id="exported_components">
+            <h2>Exported Components</h2>
+            <p>Found 5 instances</p>
+        
+            <div class="finding-card exported-components">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Exported [Activity] - infosecadventures.allsafe.ProxyActivity</div>
+                <div class="file-path">File: Activity: infosecadventures.allsafe.ProxyActivity</div>
+            </div>
+            
+            <div class="finding-card exported-components">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Exported [Activity] - infosecadventures.allsafe.challenges.DeepLinkTask</div>
+                <div class="file-path">File: Activity: infosecadventures.allsafe.challenges.DeepLinkTask</div>
+            </div>
+            
+            <div class="finding-card exported-components">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Exported [Activity] - infosecadventures.allsafe.MainActivity</div>
+                <div class="file-path">File: Activity: infosecadventures.allsafe.MainActivity</div>
+            </div>
+            
+            <div class="finding-card exported-components">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Exported [Broadcast Receiver] - infosecadventures.allsafe.challenges.NoteReceiver</div>
+                <div class="file-path">File: Broadcast Receiver: infosecadventures.allsafe.challenges.NoteReceiver</div>
+            </div>
+            
+            <div class="finding-card exported-components">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Exported [Service] - infosecadventures.allsafe.challenges.RecorderService</div>
+                <div class="file-path">File: Service: infosecadventures.allsafe.challenges.RecorderService</div>
+            </div>
+            </section>
+        <section class="findings-section" id="firebase">
+            <h2>Firebase</h2>
+            <p>Found 2 instances</p>
+        
+            <div class="finding-card firebase">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="allsafe-8cef0.firebaseio.com" target="_blank" rel="noopener noreferrer">allsafe-8cef0.firebaseio.com</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/res/values/strings.xml</div>
+            </div>
+            
+            <div class="finding-card firebase">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="-default-rtdb.firebaseio.com" target="_blank" rel="noopener noreferrer">-default-rtdb.firebaseio.com</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/database/FirebaseDatabase.smali</div>
+            </div>
+            </section>
+        <section class="findings-section" id="google_api">
+            <h2>Google Api</h2>
+            <p>Found 1 instances</p>
+        
+            <div class="finding-card google-api">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">AIzaSyDjteCQ0-ElkfBxVZIZmBfCSPNEYUYcK1g</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/res/values/strings.xml</div>
+            </div>
+            </section>
+        <section class="findings-section" id="secrets">
+            <h2>Secrets</h2>
+            <p>Found 19 instances</p>
+        
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/MediaBrowserCompat$MediaBrowserImplApi21.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/MediaBrowserCompat$MediaBrowserImplBase.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/MediaBrowserCompat$SubscriptionCallback.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/session/MediaControllerCompat$MediaControllerImplApi21$ExtraBinderRequestResultReceiver.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/session/MediaControllerCompat$MediaControllerImplApi21.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/session/MediaControllerCompat.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/session/MediaSessionCompat$MediaSessionImplApi21.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/android/support/v4/media/session/MediaSessionCompat$MediaSessionImplBase.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/appcompat/view/menu/MenuDialogHelper.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/appcompat/widget/TooltipPopup.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/media/MediaBrowserServiceCompat$MediaBrowserServiceImplApi21$1.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/media/MediaBrowserServiceCompat$MediaBrowserServiceImplBase$1.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/media/MediaBrowserServiceCompat$ServiceBinderImpl$3.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/media/MediaBrowserServiceCompat$ServiceBinderImpl$4.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/media/app/NotificationCompat$MediaStyle.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;Token&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/transition/WindowIdApi14.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;password&#x27;, &#x27;Landroid&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/NativeLibrary$onCreateView$1.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Lkotlinx&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes3/kotlinx/coroutines/CancellableContinuationImpl.smali</div>
+            </div>
+            
+            <div class="finding-card secrets">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">(&#x27;token&#x27;, &#x27;Lkotlinx&#x27;)</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes3/kotlinx/coroutines/CompletedIdempotentResult.smali</div>
+            </div>
+            </section>
+        <section class="findings-section" id="urls">
+            <h2>Urls</h2>
+            <p>Found 27 instances</p>
+        
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://medium.com/infosec-adventures" target="_blank" rel="noopener noreferrer">https://medium.com/infosec-adventures</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/res/layout/fragment_about.xml</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.twitter.com/t0thkr1s" target="_blank" rel="noopener noreferrer">https://www.twitter.com/t0thkr1s</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/res/layout/fragment_about.xml</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.github.com/t0thkr1s" target="_blank" rel="noopener noreferrer">https://www.github.com/t0thkr1s</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/res/layout/fragment_about.xml</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://allsafe-8cef0.firebaseio.com" target="_blank" rel="noopener noreferrer">https://allsafe-8cef0.firebaseio.com</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/res/values/strings.xml</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="http://ns.adobe.com/xap/1.0/\u0000" target="_blank" rel="noopener noreferrer">http://ns.adobe.com/xap/1.0/\u0000</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/androidx/exifinterface/media/ExifInterface.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://plus.google.com/" target="_blank" rel="noopener noreferrer">https://plus.google.com/</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/android/gms/common/internal/zzg.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys#CryptoKey" target="_blank" rel="noopener noreferrer">https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys#CryptoKey</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/crypto/tink/subtle/Validators.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://console.firebase.google.com/." target="_blank" rel="noopener noreferrer">https://console.firebase.google.com/.</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/database/connection/PersistentConnectionImpl$5.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.firebase.com/docs/android/guide/offline-capabilities.html#section-handling-transactions-offline" target="_blank" rel="noopener noreferrer">https://www.firebase.com/docs/android/guide/offline-capabilities.html#section-handling-transactions-offline</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/database/core/Repo.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://github.com/firebase/firebase-android-sdk" target="_blank" rel="noopener noreferrer">https://github.com/firebase/firebase-android-sdk</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/database/core/utilities/DefaultRunLoop.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://firebase.google.com/docs/database/ios/structure-data#best_practices_for_data_structure" target="_blank" rel="noopener noreferrer">https://firebase.google.com/docs/database/ios/structure-data#best_practices_for_data_structure</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/database/core/utilities/DefaultRunLoop.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://firebase.google.com/docs/database/android/retrieve-data#filtering_data" target="_blank" rel="noopener noreferrer">https://firebase.google.com/docs/database/android/retrieve-data#filtering_data</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/database/core/utilities/DefaultRunLoop.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://firebasestorage.googleapis.com/v0" target="_blank" rel="noopener noreferrer">https://firebasestorage.googleapis.com/v0</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali/com/google/firebase/storage/network/NetworkRequest.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://medium.com/infosec-adventures" target="_blank" rel="noopener noreferrer">https://medium.com/infosec-adventures</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/Constants.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.twitter.com/t0thkr1s" target="_blank" rel="noopener noreferrer">https://www.twitter.com/t0thkr1s</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/Constants.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.github.com/t0thkr1s" target="_blank" rel="noopener noreferrer">https://www.github.com/t0thkr1s</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/Constants.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://medium.com/infosec-adventures" target="_blank" rel="noopener noreferrer">https://medium.com/infosec-adventures</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/about/About$onCreateView$1.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.github.com/t0thkr1s" target="_blank" rel="noopener noreferrer">https://www.github.com/t0thkr1s</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/about/About$onCreateView$2.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.twitter.com/t0thkr1s" target="_blank" rel="noopener noreferrer">https://www.twitter.com/t0thkr1s</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/about/About$onCreateView$3.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://httpbin.org/json" target="_blank" rel="noopener noreferrer">https://httpbin.org/json</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/CertificatePinning.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="http://schemas.xmlsoap.org/soap/envelope/\" target="_blank" rel="noopener noreferrer">http://schemas.xmlsoap.org/soap/envelope/\</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/HardcodedCredentials$onCreateView$1.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="http://siebel.com/webservices\" target="_blank" rel="noopener noreferrer">http://siebel.com/webservices\</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/HardcodedCredentials$onCreateView$1.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="http://schemas.xmlsoap.org/soap/envelope/\" target="_blank" rel="noopener noreferrer">http://schemas.xmlsoap.org/soap/envelope/\</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/HardcodedCredentials.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="http://siebel.com/webservices\" target="_blank" rel="noopener noreferrer">http://siebel.com/webservices\</a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/HardcodedCredentials.smali</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.github.com/t0thkr1s " target="_blank" rel="noopener noreferrer">https://www.github.com/t0thkr1s </a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/extracted/res/layout/fragment_about.xml</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://medium.com/infosec-adventures " target="_blank" rel="noopener noreferrer">https://medium.com/infosec-adventures </a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/extracted/res/layout/fragment_about.xml</div>
+            </div>
+            
+            <div class="finding-card urls">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content"><a href="https://www.twitter.com/t0thkr1s    X   4            O{ |           $   )           " target="_blank" rel="noopener noreferrer">https://www.twitter.com/t0thkr1s    X   4            O{ |           $   )           </a></div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/extracted/res/layout/fragment_about.xml</div>
+            </div>
+            </section>
+        <section class="findings-section" id="xml_creds">
+            <h2>Xml Creds</h2>
+            <p>Found 2 instances</p>
+        
+            <div class="finding-card xml-creds">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Username: superadmin, Password: supersecurepassword</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/HardcodedCredentials$onCreateView$1.smali</div>
+            </div>
+            
+            <div class="finding-card xml-creds">
+                <div class="finding-header">
+                    <div class="finding-title">Match Found</div>
+                </div>
+                <div class="finding-content">Username: superadmin, Password: supersecurepassword</div>
+                <div class="file-path">File: /tmp/tmpau5nl02z/apktool_decompiled/smali_classes2/infosecadventures/allsafe/challenges/HardcodedCredentials.smali</div>
+            </div>
+            </section>
+        <footer>
+            <p>Report generated by APK Security Analyzer at 2025-06-18 14:00:15</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+        
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+</body>
+</html>
+    

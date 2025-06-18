@@ -41,3 +41,11 @@ Make sure you have the following installed:
 git clone https://github.com/maxmuxammil/andromeda.git
 cd andromeda
 pip3 install -r requirements.txt
+
+
+## 📸 Screenshots
+
+### 🔍 APK Analysis Report Preview
+![APK Report](images/screenshot-1.png)
+
+![APK Report](images/screenshot-2.png)
