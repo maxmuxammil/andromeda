@@ -20,9 +20,9 @@ A simple Python script that performs static analysis on Android APK files to ide
 - Extracts and displays:
   - Secrets (e.g., Passwords, API keys, Tokens)
   - URLs
+  - Deeplinks
   - Firebase Instances
   - Base64-encoded strings
-  - Deeplinks
 - Dark/light HTML report generation
 
 ---
