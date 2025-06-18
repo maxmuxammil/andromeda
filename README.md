@@ -1,13 +1,13 @@
 
 
-   ___   _  _____  ___  ____  __  __________  ___ 
+```   ___   _  _____  ___  ____  __  __________  ___ 
   / _ | / |/ / _ \/ _ \/ __ \/  |/  / __/ _ \/ _ |
  / __ |/    / // / , _/ /_/ / /|_/ / _// // / __ |
 /_/ |_/_/|_/____/_/|_|\____/_/  /_/___/____/_/ |_|.py
 
 Android APK Security Analyzer - Max Muxammil
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 # APK Security Analyzer
 
 A simple Python script that performs static analysis on Android APK files to identify potential security issues such as deeplinks, hardcoded secrets, URLs, Firebase references, and more.
