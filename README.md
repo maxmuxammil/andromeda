@@ -41,7 +41,7 @@ Make sure you have the following installed:
 git clone https://github.com/maxmuxammil/andromeda.git
 cd andromeda
 pip3 install -r requirements.txt
-
+```
 
 ## 📸 Screenshots
 
